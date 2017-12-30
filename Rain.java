@@ -5,113 +5,86 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.MemoryImageSource;
 import java.util.Random;
-import javax.swing.JDialog;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.Timer;
 
-public class Rain extends JDialog implements ActionListener {
-
-    private Random random = new Random();
-    private Dimension screenSize;
-    private JPanel graphicsPanel;
-    //行高,列宽
-    private final static int gap = 20;
-    //存放雨点顶部的位置信息(marginTop)
-    private int[] posArr;
-    //行数
-    private int lines;
-    //列数
-    private int columns;
+public class Rain extends JFrame implements ActionListener {
+    Random rand = new Random();
+    int row;
+    int[] posArr;
+    Toolkit kit = Toolkit.getDefaultToolkit();
+    Number num;
+    Dimension screenSize;
 
     public Rain() {
-        initComponents();
+        initFrame();
     }
 
-    private void initComponents() {
-        setLayout(new BorderLayout());
-        graphicsPanel = new GraphicsPanel();
-        add(graphicsPanel, BorderLayout.CENTER);
-        //设置光标不可见
-        Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-        Image image = defaultToolkit.createImage(new MemoryImageSource(0, 0, null, 0, 0));
-        Cursor invisibleCursor = defaultToolkit.createCustomCursor(image, new Point(0, 0), "cursor");
-        setCursor(invisibleCursor);
-        //ESC键退出
-        KeyPressListener keyPressListener = new KeyPressListener();
-        this.addKeyListener(keyPressListener);
-        //this.setAlwaysOnTop(true);
-        //去标题栏
+    private void initFrame() {
+        //初始化变量
+        screenSize = kit.getScreenSize();
+        row = screenSize.width/10;
+        num = new Number();
+        posArr = new int[row + 1];
+        this.add(num, BorderLayout.CENTER);
+
+        //设置窗口全屏显示
+        this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        this.setBounds(0, 0, screenSize.width, screenSize.height);
         this.setUndecorated(true);
-        //全屏
-        this.getGraphicsConfiguration().getDevice().setFullScreenWindow(this);
-        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setVisible(true);
+        //隐藏鼠标光标
+        Image img = kit.createImage(new MemoryImageSource(0, 0, new int[0], 0, 0));
+        this.setCursor(kit.createCustomCursor(img, new Point(0, 0), null));
+        //设置ESC键退出
+        JRootPane rp = this.getRootPane();
+        KeyStroke stroke = KeyStroke.getKeyStroke("ESCAPE");
+        InputMap inputMap = rp.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        inputMap.put(stroke, "ESCAPE");
+        rp.getActionMap().put("ESCAPE", new Key());
 
-        screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        lines = screenSize.height / gap;
-        columns = screenSize.width / gap;
-
-        posArr = new int[columns + 1];
-        random = new Random();
-        for (int i = 0; i < posArr.length; i++) {
-            posArr[i] = random.nextInt(lines);
+        this.setVisible(true);
+        //初始化列头位置（以像素为单位）
+        for(int i = 0; i < row +1; i++) {
+            posArr[i] = rand.nextInt(screenSize.height);
         }
-
-        //每秒10帧
+        //整个程序的主循环
         new Timer(80, this).start();
     }
-
-    /**
-     * @return 随机字符
-     */
-    private char getChr() {
-        return (char) (random.nextInt(94) + 33);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        graphicsPanel.repaint();
-    }
-
-    private class GraphicsPanel extends JPanel {
+    //监听按键动作
+    private class Key extends AbstractAction {
         @Override
-        public void paint(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setFont(getFont().deriveFont(Font.BOLD));
-            g2d.setColor(Color.BLACK);
-            g2d.fillRect(0, 0, screenSize.width, screenSize.height);
-            //当前列
-            int currentColumn = 0;
-            for (int x = 0; x < screenSize.width; x += gap) {
-                int endPos = posArr[currentColumn];
-                g2d.setColor(Color.CYAN);
-                g2d.drawString(String.valueOf(getChr()), x, endPos * gap);
-                int cg = 0;
-                for (int j = endPos - 15; j < endPos; j++) {
-                    //颜色渐变
-                    cg += 20;
-                    if (cg > 255) {
-                        cg = 255;
-                    }
-                    g2d.setColor(new Color(0, cg, 0));
-                    g2d.drawString(String.valueOf(getChr()), x, j * gap);
-                }
-                //每放完一帧，当前列上雨点的位置随机下移1~5行
-                posArr[currentColumn] += random.nextInt(5);
-                //当雨点位置超过屏幕高度时，重新产生一个随机位置
-                if (posArr[currentColumn] * gap > getHeight()) {
-                    posArr[currentColumn] = random.nextInt(lines);
-                }
-                currentColumn++;
-            }
+        public void actionPerformed(ActionEvent e) {
+            System.exit(0);
         }
     }
+    //由Timer触发
+    public void actionPerformed(ActionEvent e) {
+        num.repaint();
+    
+    }
+    //画板
+    class Number extends JPanel {
 
-    private class KeyPressListener extends KeyAdapter {
-        @Override
-        public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                System.exit(0);
+        public void paint(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setFont(getFont().deriveFont(Font.BOLD));
+            //将背景色绘为黑色
+            g2.setColor(new Color(0, 0, 0));
+            g2.fillRect(0, 0, screenSize.width, screenSize.height);
+
+            int index = 0;//列标签
+            g2.setColor(Color.GREEN);
+            for(int i = 0; i < row; i++) {
+                //绘出列字符串
+                for(int j = 0; j < 20; j ++) {
+                    g2.drawString("" + rand.nextInt(2), i * 10, posArr[index] - j * 17);
+                }
+
+                posArr[index] += rand.nextInt(5) * 20;
+                if(posArr[index] > 768 + 15 * 20) {
+                    posArr[i] = rand.nextInt(5) * 20;
+                }
+                index ++;
             }
         }
     }
